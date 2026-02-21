@@ -1,24 +1,26 @@
 # livesync-bridge-container
 
-[vrtmrz/livesync-bridge](https://github.com/vrtmrz/livesync-bridge) の Docker イメージを自動ビルドし、GHCR で配信するリポジトリです。
+Auto-build and distribute Docker images of [vrtmrz/livesync-bridge](https://github.com/vrtmrz/livesync-bridge) via GHCR.
 
-## イメージの取得
+[日本語](README.ja-jp.md)
+
+## Pulling the Image
 
 ```sh
 docker pull ghcr.io/turtton/livesync-bridge:latest
 ```
 
-### タグ
+### Tags
 
-| タグ | 説明 |
-|------|------|
-| `latest` | 最新ビルド |
-| `<commit-sha>` | 上流コミットSHAの先頭12文字 (例: `abc123def456`) |
-| `<YYYYMMDD>` | ビルド日付 (例: `20260221`) |
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest build |
+| `<commit-sha>` | First 12 characters of the upstream commit SHA (e.g., `abc123def456`) |
+| `<YYYYMMDD>` | Build date (e.g., `20260221`) |
 
-## 使い方
+## Usage
 
-設定ファイル (`config.json`) を用意し、以下のように実行します。設定の書き方は[上流リポジトリ](https://github.com/vrtmrz/livesync-bridge)を参照してください。
+Prepare a config file (`config.json`) and run as follows. See the [upstream repository](https://github.com/vrtmrz/livesync-bridge) for configuration details.
 
 ```yaml
 # docker-compose.yml
@@ -26,8 +28,8 @@ services:
   bridge:
     image: ghcr.io/turtton/livesync-bridge:latest
     volumes:
-      - ./dat:/app/dat   # config.json を配置
-      - ./data:/app/data # 同期データの保存先
+      - ./dat:/app/dat   # Place config.json here
+      - ./data:/app/data # Synced data storage
     restart: unless-stopped
 ```
 
@@ -35,16 +37,16 @@ services:
 docker compose up -d
 ```
 
-## 上流との差分 (パッチ)
+## Patches
 
-ビルド時に `patches/` ディレクトリ内のパッチを上流ソースに適用しています。上流でマージされたパッチは削除してください。
+Patches in the `patches/` directory are applied to the upstream source at build time. Remove patches once they are merged upstream.
 
-| パッチ | 対応PR | 内容 |
-|--------|--------|------|
-| `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | `deno install -A` → `deno install -gA main.ts` (Deno 2.x ビルド修正) |
+| Patch | Upstream PR | Description |
+|-------|-------------|-------------|
+| `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | `deno install -A` → `deno install -gA main.ts` (Deno 2.x build fix) |
 
-## 自動ビルドの仕組み
+## How It Works
 
-GitHub Actions が毎日 UTC 0:00 に上流リポジトリの最新コミットをチェックし、新しいコミットがあればイメージをビルドして GHCR に push します。同じコミットに対する重複ビルドはスキップされます。
+GitHub Actions checks the upstream repository for new commits daily at UTC 00:00. If a new commit is found, it builds the Docker image and pushes it to GHCR. Duplicate builds for the same commit are skipped.
 
-手動でのリビルドは Actions タブの「Run workflow」から実行できます。
+Manual rebuilds can be triggered from the Actions tab via "Run workflow".
