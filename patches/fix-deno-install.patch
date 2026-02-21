@@ -1,10 +1,13 @@
+diff --git a/Dockerfile b/Dockerfile
+index 7b5c1e2..54969b7 100644
 --- a/Dockerfile
 +++ b/Dockerfile
 @@ -7,7 +7,7 @@ VOLUME /app/data
-
+ 
  COPY . .
-
+ 
 -RUN deno install -A
 +RUN deno install -gA main.ts
-
+ 
  CMD [ "deno", "task", "run" ]
+ 
