@@ -78,10 +78,22 @@ jobs:
       contents: read
       packages: write
     steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+
       - name: Clone upstream repository
         env:
           UPSTREAM_REPO: ${{ env.UPSTREAM_REPO }}
         run: git clone --recursive "$UPSTREAM_REPO" src
+
+      - name: Apply patches
+        run: |
+          set -euo pipefail
+          for patch in patches/*.patch; do
+            [ -f "$patch" ] || continue
+            echo "Applying $patch"
+            git -C src apply "../$patch"
+          done
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
