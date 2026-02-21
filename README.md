@@ -35,6 +35,14 @@ services:
 docker compose up -d
 ```
 
+## 上流との差分 (パッチ)
+
+ビルド時に `patches/` ディレクトリ内のパッチを上流ソースに適用しています。上流でマージされたパッチは削除してください。
+
+| パッチ | 対応PR | 内容 |
+|--------|--------|------|
+| `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | `deno install -A` → `deno install -gA main.ts` (Deno 2.x ビルド修正) |
+
 ## 自動ビルドの仕組み
 
 GitHub Actions が毎日 UTC 0:00 に上流リポジトリの最新コミットをチェックし、新しいコミットがあればイメージをビルドして GHCR に push します。同じコミットに対する重複ビルドはスキップされます。
