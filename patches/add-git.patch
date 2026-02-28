@@ -1,0 +1,17 @@
+diff --git a/Dockerfile b/Dockerfile
+index 7b5c1e2..028e2f6 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -5,6 +5,12 @@ WORKDIR /app
+ VOLUME /app/dat
+ VOLUME /app/data
+
++RUN rm -f /etc/apt/apt.conf.d/docker-clean; \
++    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
++RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
++    --mount=type=cache,target=/var/lib/apt,sharing=locked \
++    apt-get update && apt-get install -y --no-install-recommends git
++
+ COPY . .
+
+ RUN deno install -A

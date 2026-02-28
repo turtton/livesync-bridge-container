@@ -43,6 +43,7 @@ Patches in the `patches/` directory are applied to the upstream source at build 
 
 | Patch | Upstream PR | Description |
 |-------|-------------|-------------|
+| `add-git.patch` | - | Install `git` in the Docker image |
 | `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | `deno install -A` → `deno install -gA main.ts` (Deno 2.x build fix) |
 
 ## How It Works

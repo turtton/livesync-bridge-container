@@ -43,6 +43,7 @@ docker compose up -d
 
 | パッチ | 対応PR | 内容 |
 |--------|--------|------|
+| `add-git.patch` | - | Docker イメージに `git` をインストール |
 | `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | `deno install -A` → `deno install -gA main.ts` (Deno 2.x ビルド修正) |
 
 ## 自動ビルドの仕組み
