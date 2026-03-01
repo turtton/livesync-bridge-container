@@ -14,4 +14,4 @@ index 54969b7..4dc185b 100644
 +
  COPY . .
 
- RUN deno install -gA main.ts
+ RUN deno install --entrypoint main.ts --allow-import
