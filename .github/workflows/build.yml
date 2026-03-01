@@ -1,6 +1,9 @@
 name: Build and Push Container Image
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
@@ -11,7 +14,7 @@ env:
   UPSTREAM_REPO: https://github.com/vrtmrz/livesync-bridge.git
 
 jobs:
-  check:
+  check-upstream:
     runs-on: ubuntu-latest
     permissions:
       packages: read
@@ -70,9 +73,9 @@ jobs:
             echo "No new upstream commits. Skipping build."
           fi
 
-  build:
-    needs: check
-    if: needs.check.outputs.should_build == 'true'
+  build-upstream:
+    needs: check-upstream
+    if: needs.check-upstream.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -111,35 +114,104 @@ jobs:
           cache-to: type=gha,mode=max,scope=upstream
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check.outputs.sha_short }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check.outputs.date }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-upstream.outputs.sha_short }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-upstream.outputs.date }}
           labels: |
             org.opencontainers.image.source=https://github.com/vrtmrz/livesync-bridge
             org.opencontainers.image.description=LiveSync Bridge - Custom replicator for Self-hosted LiveSync
-            org.opencontainers.image.revision=${{ needs.check.outputs.sha }}
+            org.opencontainers.image.revision=${{ needs.check-upstream.outputs.sha }}
 
-      - name: Apply remaining patches
+  check-patched:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    outputs:
+      should_build: ${{ steps.decide.outputs.should_build }}
+      sha_short: ${{ steps.submodule.outputs.sha_short }}
+      date: ${{ steps.submodule.outputs.date }}
+    steps:
+      - name: Checkout this repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Get submodule commit info
+        id: submodule
         run: |
           set -euo pipefail
-          for patch in patches/*.patch; do
-            [ -f "$patch" ] || continue
-            [ "$(basename "$patch")" = "fix-deno-install.patch" ] && continue
-            echo "Applying $patch"
-            git -C src apply "../$patch"
-          done
+          SHA=$(git -C livesync-bridge rev-parse HEAD)
+          echo "sha_short=${SHA::12}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +'%Y%m%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if image already exists
+        id: check
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.submodule.outputs.sha_short }}-patched
+        run: |
+          set -euo pipefail
+          if docker manifest inspect "$IMAGE_REF" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Image already exists for this commit"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "New commit detected"
+          fi
+
+      - name: Decide whether to build
+        id: decide
+        env:
+          EXISTS: ${{ steps.check.outputs.exists }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EXISTS" != "true" ] || [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+            echo "No new fork commits. Skipping build."
+          fi
+
+  build-patched:
+    needs: check-patched
+    if: needs.check-patched.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout this repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push image (patched)
         uses: docker/build-push-action@v6
         with:
-          context: ./src
+          context: ./livesync-bridge
           push: true
           cache-from: type=gha,scope=patched
           cache-to: type=gha,mode=max,scope=patched
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-patched
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check.outputs.sha_short }}-patched
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check.outputs.date }}-patched
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-patched.outputs.sha_short }}-patched
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-patched.outputs.date }}-patched
           labels: |
-            org.opencontainers.image.source=https://github.com/vrtmrz/livesync-bridge
+            org.opencontainers.image.source=https://github.com/turtton/livesync-bridge
             org.opencontainers.image.description=LiveSync Bridge - Custom replicator for Self-hosted LiveSync (patched)
-            org.opencontainers.image.revision=${{ needs.check.outputs.sha }}
+            org.opencontainers.image.revision=${{ needs.check-patched.outputs.sha_short }}

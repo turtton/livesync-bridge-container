@@ -1,0 +1,3 @@
+[submodule "livesync-bridge"]
+	path = livesync-bridge
+	url = git@github.com:turtton/livesync-bridge.git

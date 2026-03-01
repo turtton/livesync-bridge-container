@@ -12,19 +12,19 @@ docker pull ghcr.io/turtton/livesync-bridge:latest
 
 ### イメージの種類
 
-上流の各コミットに対して2種類のイメージをビルドしています:
+2種類のイメージを提供しています:
 
 | 種類 | タグ | 説明 |
 |------|------|------|
 | **upstream** | `latest`, `<sha>`, `<date>` | 上流 Dockerfile を Deno 2.x でビルドするための最小限の修正のみ (`fix-deno-install.patch`) |
-| **patched** | `latest-patched`, `<sha>-patched`, `<date>-patched` | 全パッチ適用。依存関係を事前キャッシュし、起動時のダウンロードなしでコンテナが起動する |
+| **patched** | `latest-patched`, `<sha>-patched`, `<date>-patched` | [turtton/livesync-bridge](https://github.com/turtton/livesync-bridge) fork からビルド。依存関係を事前キャッシュし、起動時のダウンロードなしでコンテナが起動する |
 
 ### タグ
 
 | タグ | 説明 |
 |------|------|
 | `latest` / `latest-patched` | 最新ビルド |
-| `<commit-sha>` / `<commit-sha>-patched` | 上流コミットSHAの先頭12文字 (例: `abc123def456`) |
+| `<commit-sha>` / `<commit-sha>-patched` | コミットSHAの先頭12文字 (`latest` は上流SHA、`latest-patched` は fork SHA) |
 | `<YYYYMMDD>` / `<YYYYMMDD>-patched` | ビルド日付 (例: `20260221`) |
 
 ## 使い方
@@ -46,18 +46,30 @@ services:
 docker compose up -d
 ```
 
-## 上流との差分 (パッチ)
+## パッチ & Fork
 
-ビルド時に `patches/` ディレクトリ内のパッチを上流ソースに適用しています。`fix-deno-install.patch` は両方のイメージに、それ以外は patched イメージのみに適用されます。上流にマージされたパッチは順次削除されます。
+**upstream** イメージは Deno 2.x 互換のため `fix-deno-install.patch` を上流ソースに適用してビルドしています。
 
-| パッチ | 対応PR | 適用先 | 内容 |
-|--------|--------|--------|------|
-| `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | 両方 | `deno install -A` → `deno install -gA main.ts` (Deno 2.x ビルド修正) |
-| `add-git.patch` | - | patched | Docker イメージに `git` と `ca-certificates` をインストール |
-| `pre-cache-deps.patch` | - | patched | `deno install --entrypoint` で依存を事前キャッシュし、起動時のダウンロードを不要にする |
+**patched** イメージは [turtton/livesync-bridge](https://github.com/turtton/livesync-bridge) fork (git submodule として管理) から直接ビルドしています。追加の変更はパッチファイルではなく fork 側で管理することで、メンテナンス性を改善しています。
+
+### Fork での変更内容
+
+| 変更 | 内容 |
+|------|------|
+| Dockerfile の改善 | `git` と `ca-certificates` のインストール、`deno install --entrypoint` で依存を事前キャッシュ |
+| PeerCouchDB レースコンディション修正 | `delete()`/`put()`/`get()`/`getMeta()` の先頭に `await this.man.ready.promise` を追加 |
+
+### 上流に適用しているパッチ
+
+| パッチ | 対応PR | 内容 |
+|--------|--------|------|
+| `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | `deno install -A` → `deno install -gA main.ts` (Deno 2.x ビルド修正) |
 
 ## 自動ビルドの仕組み
 
-GitHub Actions が毎日 UTC 0:00 に上流リポジトリの最新コミットをチェックし、新しいコミットがあればイメージをビルドして GHCR に push します。同じコミットに対する重複ビルドはスキップされます。
+GitHub Actions で2つの独立したビルドパイプラインを実行しています:
 
-手動でのリビルドは Actions タブの「Run workflow」から実行できます。
+- **upstream**: 毎日 UTC 0:00 に上流リポジトリの最新コミットをチェックし、新しいコミットがあれば clone → `fix-deno-install.patch` 適用 → ビルド → GHCR に push します。
+- **patched**: `main` ブランチへの push (submodule 更新時など) またはスケジュール/手動実行で発火します。fork submodule をビルドコンテキストとして直接使用し、パッチ適用は不要です。
+
+いずれのパイプラインでも、同じコミットに対する重複ビルドはスキップされます。手動でのリビルドは Actions タブの「Run workflow」から実行できます。
