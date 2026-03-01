@@ -39,7 +39,7 @@ docker compose up -d
 
 ## Patches
 
-Patches in the `patches/` directory are applied to the upstream source at build time. Remove patches once they are merged upstream.
+Patches in the `patches/` directory are applied to the upstream source at build time. These patches will be removed once they are merged upstream.
 
 | Patch | Upstream PR | Description |
 |-------|-------------|-------------|
