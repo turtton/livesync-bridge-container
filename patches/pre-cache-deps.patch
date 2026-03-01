@@ -11,4 +11,4 @@ index 4dc185b..4e0e7fc 100644
 +
  COPY . .
  
- RUN deno install -gA main.ts
+ RUN deno install -gA --allow-import main.ts
