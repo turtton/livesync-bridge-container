@@ -44,7 +44,8 @@ Patches in the `patches/` directory are applied to the upstream source at build 
 | Patch | Upstream PR | Description |
 |-------|-------------|-------------|
 | `add-git.patch` | - | Install `git` and `ca-certificates` in the Docker image |
-| `cache-and-fix-deno.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | Cache dependencies with `deno install` before copying source, and fix `deno install -A` → `deno install -gA main.ts` (Deno 2.x) |
+| `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | `deno install -A` → `deno install -gA main.ts` (Deno 2.x build fix) |
+| `pre-cache-deps.patch` | - | Cache dependencies with `deno install` before copying source |
 
 ## How It Works
 

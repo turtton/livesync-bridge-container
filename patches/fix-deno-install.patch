@@ -1,0 +1,13 @@
+diff --git a/Dockerfile b/Dockerfile
+index 458bea1..4dc185b 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+ 
+ COPY . .
+ 
+-RUN deno install -A
++RUN deno install -gA main.ts
+ 
+ CMD [ "deno", "task", "run" ]
+ 

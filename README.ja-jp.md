@@ -44,7 +44,8 @@ docker compose up -d
 | パッチ | 対応PR | 内容 |
 |--------|--------|------|
 | `add-git.patch` | - | Docker イメージに `git` と `ca-certificates` をインストール |
-| `cache-and-fix-deno.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | ソースコピー前に `deno install` で依存をキャッシュ、`deno install -A` → `deno install -gA main.ts` (Deno 2.x ビルド修正) |
+| `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | `deno install -A` → `deno install -gA main.ts` (Deno 2.x ビルド修正) |
+| `pre-cache-deps.patch` | - | ソースコピー前に `deno install` で依存をキャッシュ |
 
 ## 自動ビルドの仕組み
 
