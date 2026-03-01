@@ -1,14 +1,18 @@
 diff --git a/Dockerfile b/Dockerfile
-index 4dc185b..4e0e7fc 100644
+index 4dc185b..6984244 100644
 --- a/Dockerfile
 +++ b/Dockerfile
-@@ -11,6 +11,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+@@ -11,9 +11,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
      --mount=type=cache,target=/var/lib/apt,sharing=locked \
      apt-get update && apt-get install -y --no-install-recommends git ca-certificates
-
+ 
 +COPY deno.jsonc deno.lock ./
 +RUN deno install --allow-import
 +
  COPY . .
-
- RUN deno install --entrypoint main.ts --allow-import
+ 
+-RUN deno install -gA main.ts
++RUN deno install --entrypoint main.ts --allow-import
+ 
+ CMD [ "deno", "task", "run" ]
+ 

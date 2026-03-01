@@ -10,13 +10,22 @@
 docker pull ghcr.io/turtton/livesync-bridge:latest
 ```
 
+### イメージの種類
+
+上流の各コミットに対して2種類のイメージをビルドしています:
+
+| 種類 | タグ | 説明 |
+|------|------|------|
+| **upstream** | `latest`, `<sha>`, `<date>` | 上流 Dockerfile を Deno 2.x でビルドするための最小限の修正のみ (`fix-deno-install.patch`) |
+| **patched** | `latest-patched`, `<sha>-patched`, `<date>-patched` | 全パッチ適用。依存関係を事前キャッシュし、起動時のダウンロードなしでコンテナが起動する |
+
 ### タグ
 
 | タグ | 説明 |
 |------|------|
-| `latest` | 最新ビルド |
-| `<commit-sha>` | 上流コミットSHAの先頭12文字 (例: `abc123def456`) |
-| `<YYYYMMDD>` | ビルド日付 (例: `20260221`) |
+| `latest` / `latest-patched` | 最新ビルド |
+| `<commit-sha>` / `<commit-sha>-patched` | 上流コミットSHAの先頭12文字 (例: `abc123def456`) |
+| `<YYYYMMDD>` / `<YYYYMMDD>-patched` | ビルド日付 (例: `20260221`) |
 
 ## 使い方
 
@@ -26,7 +35,7 @@ docker pull ghcr.io/turtton/livesync-bridge:latest
 # docker-compose.yml
 services:
   bridge:
-    image: ghcr.io/turtton/livesync-bridge:latest
+    image: ghcr.io/turtton/livesync-bridge:latest-patched
     volumes:
       - ./dat:/app/dat   # config.json を配置
       - ./data:/app/data # 同期データの保存先
@@ -39,13 +48,13 @@ docker compose up -d
 
 ## 上流との差分 (パッチ)
 
-ビルド時に `patches/` ディレクトリ内のパッチを上流ソースに適用しています。上流にマージされたパッチは順次削除されます。
+ビルド時に `patches/` ディレクトリ内のパッチを上流ソースに適用しています。`fix-deno-install.patch` は両方のイメージに、それ以外は patched イメージのみに適用されます。上流にマージされたパッチは順次削除されます。
 
-| パッチ | 対応PR | 内容 |
-|--------|--------|------|
-| `add-git.patch` | - | Docker イメージに `git` と `ca-certificates` をインストール |
-| `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | `deno install -A` → `deno install -gA main.ts` (Deno 2.x ビルド修正) |
-| `pre-cache-deps.patch` | - | ソースコピー前に `deno install` で依存をキャッシュ |
+| パッチ | 対応PR | 適用先 | 内容 |
+|--------|--------|--------|------|
+| `fix-deno-install.patch` | [#33](https://github.com/vrtmrz/livesync-bridge/pull/33) | 両方 | `deno install -A` → `deno install -gA main.ts` (Deno 2.x ビルド修正) |
+| `add-git.patch` | - | patched | Docker イメージに `git` と `ca-certificates` をインストール |
+| `pre-cache-deps.patch` | - | patched | `deno install --entrypoint` で依存を事前キャッシュし、起動時のダウンロードを不要にする |
 
 ## 自動ビルドの仕組み
 
