@@ -7,7 +7,7 @@ index 7b5c1e2..54969b7 100644
  COPY . .
 
 -RUN deno install -A
-+RUN deno install -gA --allow-import main.ts
++RUN deno install -gA main.ts
 
  CMD [ "deno", "task", "run" ]
 
