@@ -86,6 +86,12 @@ jobs:
           UPSTREAM_REPO: ${{ env.UPSTREAM_REPO }}
         run: git clone --recursive "$UPSTREAM_REPO" src
 
+      - name: Apply build-fix patches to upstream
+        run: |
+          set -euo pipefail
+          echo "Applying patches/fix-deno-install.patch"
+          git -C src apply ../patches/fix-deno-install.patch
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -112,11 +118,12 @@ jobs:
             org.opencontainers.image.description=LiveSync Bridge - Custom replicator for Self-hosted LiveSync
             org.opencontainers.image.revision=${{ needs.check.outputs.sha }}
 
-      - name: Apply patches
+      - name: Apply remaining patches
         run: |
           set -euo pipefail
           for patch in patches/*.patch; do
             [ -f "$patch" ] || continue
+            [ "$(basename "$patch")" = "fix-deno-install.patch" ] && continue
             echo "Applying $patch"
             git -C src apply "../$patch"
           done
