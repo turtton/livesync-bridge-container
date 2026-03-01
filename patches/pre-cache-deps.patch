@@ -7,7 +7,7 @@ index 4dc185b..4e0e7fc 100644
      apt-get update && apt-get install -y --no-install-recommends git ca-certificates
  
 +COPY deno.jsonc deno.lock ./
-+RUN deno install
++RUN deno install --allow-import
 +
  COPY . .
  
