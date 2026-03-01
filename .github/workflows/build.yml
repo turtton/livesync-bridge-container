@@ -86,15 +86,6 @@ jobs:
           UPSTREAM_REPO: ${{ env.UPSTREAM_REPO }}
         run: git clone --recursive "$UPSTREAM_REPO" src
 
-      - name: Apply patches
-        run: |
-          set -euo pipefail
-          for patch in patches/*.patch; do
-            [ -f "$patch" ] || continue
-            echo "Applying $patch"
-            git -C src apply "../$patch"
-          done
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -105,13 +96,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Build and push image (upstream)
         uses: docker/build-push-action@v6
         with:
           context: ./src
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=upstream
+          cache-to: type=gha,mode=max,scope=upstream
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check.outputs.sha_short }}
@@ -119,4 +110,29 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/vrtmrz/livesync-bridge
             org.opencontainers.image.description=LiveSync Bridge - Custom replicator for Self-hosted LiveSync
+            org.opencontainers.image.revision=${{ needs.check.outputs.sha }}
+
+      - name: Apply patches
+        run: |
+          set -euo pipefail
+          for patch in patches/*.patch; do
+            [ -f "$patch" ] || continue
+            echo "Applying $patch"
+            git -C src apply "../$patch"
+          done
+
+      - name: Build and push image (patched)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          push: true
+          cache-from: type=gha,scope=patched
+          cache-to: type=gha,mode=max,scope=patched
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-patched
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check.outputs.sha_short }}-patched
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check.outputs.date }}-patched
+          labels: |
+            org.opencontainers.image.source=https://github.com/vrtmrz/livesync-bridge
+            org.opencontainers.image.description=LiveSync Bridge - Custom replicator for Self-hosted LiveSync (patched)
             org.opencontainers.image.revision=${{ needs.check.outputs.sha }}
