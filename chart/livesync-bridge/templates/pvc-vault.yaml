@@ -1,0 +1,19 @@
+{{- if not .Values.persistence.vault.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "livesync-bridge.fullname" . }}-vault
+  labels:
+    {{- include "livesync-bridge.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.persistence.vault.storageClassName }}
+  storageClassName: {{ .Values.persistence.vault.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.vault.size }}
+{{- end }}

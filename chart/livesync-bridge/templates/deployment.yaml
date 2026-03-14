@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "livesync-bridge.fullname" . }}
+  labels:
+    {{- include "livesync-bridge.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "livesync-bridge.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "livesync-bridge.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: livesync-bridge
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: GIT_REPO_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: GIT_REPO_URL
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: GITHUB_TOKEN
+            - name: GIT_BRANCH
+              value: {{ .Values.git.branch | quote }}
+            - name: GIT_USER_NAME
+              value: {{ .Values.git.userName | quote }}
+            - name: GIT_USER_EMAIL
+              value: {{ .Values.git.userEmail | quote }}
+            - name: VAULT_DIR
+              value: "/app/vault/{{ required "vaultName is required" .Values.vaultName }}"
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/dat/config.json
+              subPath: config.json
+              readOnly: true
+            - name: scripts
+              mountPath: /app/dat/script/commit.sh
+              subPath: commit.sh
+            - name: scripts
+              mountPath: /app/dat/script/git-askpass.sh
+              subPath: git-askpass.sh
+            - name: vault
+              mountPath: /app/vault
+            - name: data
+              mountPath: /app/data
+      volumes:
+        - name: config
+          secret:
+            secretName: {{ .Values.existingSecret }}
+            items:
+              - key: config.json
+                path: config.json
+        - name: scripts
+          configMap:
+            name: {{ include "livesync-bridge.fullname" . }}-scripts
+            defaultMode: 0755
+        - name: vault
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.vault.existingClaim | default (printf "%s-vault" (include "livesync-bridge.fullname" .)) }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.data.existingClaim | default (printf "%s-data" (include "livesync-bridge.fullname" .)) }}

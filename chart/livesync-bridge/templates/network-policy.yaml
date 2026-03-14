@@ -1,0 +1,16 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "livesync-bridge.fullname" . }}-egress
+  labels:
+    {{- include "livesync-bridge.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "livesync-bridge.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    - {}
+{{- end }}

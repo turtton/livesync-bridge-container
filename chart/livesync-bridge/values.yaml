@@ -1,0 +1,38 @@
+image:
+  repository: ghcr.io/turtton/livesync-bridge
+  tag: latest-patched
+  pullPolicy: Always
+
+# Required: mounted as /app/vault/<vaultName>
+vaultName: ""
+
+git:
+  branch: main
+  userName: livesync-bridge
+  userEmail: livesync-bridge@localhost
+
+# Existing Secret containing GIT_REPO_URL, GITHUB_TOKEN, config.json
+existingSecret: livesync-bridge-config
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+nodeSelector: {}
+
+persistence:
+  vault:
+    size: 500Mi
+    storageClassName: ""
+    # Set to use an existing PVC (skips chart-managed PVC creation)
+    existingClaim: ""
+  data:
+    size: 500Mi
+    storageClassName: ""
+    existingClaim: ""
+
+networkPolicy:
+  enabled: false
