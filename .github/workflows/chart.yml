@@ -1,0 +1,33 @@
+name: Package and Push Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "chart/**"
+  workflow_dispatch:
+
+env:
+  REGISTRY: oci://ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  push-chart:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Package chart
+        run: helm package chart/livesync-bridge/
+
+      - name: Push chart to GHCR
+        run: helm push livesync-bridge-*.tgz ${{ env.REGISTRY }}
