@@ -35,7 +35,7 @@ check-patched  → build-patched    (submodule SHA via git rev-parse)
 
 Both skip builds when the SHA-tagged image already exists in GHCR (unless `workflow_dispatch`).
 
-Triggers: `push` to `main`, daily cron at UTC 00:00, manual `workflow_dispatch`.
+Triggers: `push` to `main`, `pull_request` to `main`, daily cron at UTC 00:00, manual `workflow_dispatch`.
 
 ### Submodule
 
