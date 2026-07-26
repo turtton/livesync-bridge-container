@@ -45,7 +45,9 @@ Changes to the patched variant go into the fork repo, not as patch files. After 
 
 ### Patches
 
-`patches/fix-deno-install.patch` is the only patch, applied to the upstream variant only. It fixes `deno install` for Deno 2.x compatibility (upstream PR [#33](https://github.com/vrtmrz/livesync-bridge/pull/33)).
+`patches/` directory contains optional `.patch` files applied to the upstream variant. Patches are automatically applied in alphabetical order.
+This was previously `fix-deno-install.patch` (upstream PR [#33](https://github.com/vrtmrz/livesync-bridge/pull/33)),
+but the upstream has since resolved the issue in their `Dockerfile`, so the patch was removed.
 
 ## Key Conventions
 
