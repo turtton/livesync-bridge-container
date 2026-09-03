@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "livesync-bridge.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   strategy:
     type: Recreate
   selector:
