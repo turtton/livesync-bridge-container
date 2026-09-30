@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "chart/**"
+      - "tests/commit-script.sh"
   workflow_dispatch:
 
 env:
@@ -25,6 +26,12 @@ jobs:
 
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Test commit script
+        run: sh tests/commit-script.sh
+
+      - name: Lint chart
+        run: helm lint chart/livesync-bridge/ --set vaultName=private
 
       - name: Package chart
         run: helm package chart/livesync-bridge/
